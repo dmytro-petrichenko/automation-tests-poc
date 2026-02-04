@@ -179,14 +179,35 @@ For such cases TestContext has Results Property
 
 Inside driver we can wright to that property, and inside verifier we can read it
 
-  [[add here full pseudo code driver with these calls  ]]
-Context.Results.Set("messages", _inboxService.GetInboxMessages());
-Context.Results.Set<IResult>("consumeResult", InboxService.ConsumeMessage(message.First().id));
+```csharp
+public class InboxServiceDriver : TestContextAware
+{
+    private InboxService _inboxService;
 
+    public void ConsumeMessage()
+    {
+        var messages = _inboxService.GetInboxMessages();
+        _context.Results.Set("messages", messages);
+        
+        var result = _inboxService.ConsumeMessage(messages.First().id);
+        _context.Results.Set("consumeResult", result);
+    }
+}
+```
 
-  [[add here full pseudo code varifier with these calls  ]]
-Context.Results.Get("messages");
+```csharp
+public class InboxServiceVerifier : TestContextAware
+{
+    public void AssertMessageConsumed()
+    {
+        var messages = _context.Results.Get<List<Message>>("messages");
+        Assert.AreEqual(2, messages.Count);
 
+        var result = _context.Results.Get<IResult>("consumeResult");
+        Assert.True(result.IsOk);
+    }
+}
+```
 
 ## Lifecycle Diagram of Integration Test case execution 
 
@@ -237,3 +258,16 @@ sequenceDiagram
     deactivate Base
 ```
 
+## Setup of the test for developer
+As a developer you will need mostly to create
+TestedServiceDriver and TestedServiceVerifier
+
+In some cases you might need to override  BuildContext method to ajust your test case context    
+
+protected virtual TestContext BuildContext()
+{
+    return new TestContextBuilder().Build();
+}
+
+Real life implementation examples are in this repo
+https://github.com/ProductMadness/apptech-phoenix-automation-unity
