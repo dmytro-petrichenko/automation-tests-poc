@@ -151,3 +151,52 @@ public class UserServiceTests
     }
 }
 ```
+
+## Lifecycle Diagram
+
+```mermaid
+sequenceDiagram
+    participant Runner as User/Runner
+    participant Base as TestsBase
+    participant Context as TestContext
+    participant Driver as Driver
+    participant Verifier as Verifier
+    participant Service as Service
+
+    Runner->>Base: BaseSetUp()
+    activate Base
+    Base->>Context: new TestContextBuilder().Build()
+    activate Context
+
+    Base->>Driver: new Driver()
+    activate Driver
+    Base->>Driver: Init(context)
+    Driver->>Service: new Service(context dependencies)
+    activate Service
+
+    Base->>Verifier: new Verifier()
+    activate Verifier
+    Base->>Verifier: Init(context)
+    deactivate Base
+
+    Runner->>Base: [Test] Execution
+    activate Base
+    Base->>Driver: Method()
+    Driver->>Service: Action()
+    Service->>Context: Change State / Data
+    Base->>Verifier: Assert()
+    Verifier->>Context: Check State
+    deactivate Base
+
+    Runner->>Base: BaseTearDown()
+    activate Base
+    Base->>Driver: Dispose()
+    Driver->>Service: Dispose()
+    deactivate Service
+    deactivate Driver
+    Base->>Verifier: Dispose()
+    deactivate Verifier
+    Base->>Context: Dispose()
+    deactivate Context
+    deactivate Base
+```
