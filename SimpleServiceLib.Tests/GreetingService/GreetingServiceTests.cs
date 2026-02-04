@@ -18,7 +18,7 @@ public class GreetingServiceDriver : IContextAware
 
     public void MakeGreet(string name)
     {
-        _context.ActionResult = _service.Greet(name);
+        _context.Results.Set("greeting", _service.Greet(name));
     }
 
     public void Init(TestContext ctx)
@@ -34,7 +34,7 @@ public class GreetingServiceVerifier : IContextAware
 
     public void AssertSuccessGreetResult()
     {
-        Assert.That("Hello, Alice!", Is.EqualTo(_context.GetActionResult<string>()));
+        Assert.That("Hello, Alice!", Is.EqualTo(_context.Results.Get<string>("greeting")));
     }
 
     public void Init(TestContext ctx)
