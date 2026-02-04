@@ -1,8 +1,13 @@
 namespace SimpleServiceLib.Tests;
 
+public interface IContextAware
+{
+    void Init(TestContext ctx);
+}
+
 public abstract class TestsBase<TDriver, TVerifier>
-    where TDriver : class, new()
-    where TVerifier : class, new()
+    where TDriver : class, IContextAware, new()
+    where TVerifier : class, IContextAware, new()
 {
     protected TestContext Context { get; private set; }
     protected TDriver Driver { get; private set; }
@@ -29,11 +34,15 @@ public abstract class TestsBase<TDriver, TVerifier>
 
     protected virtual TDriver CreateDriver(TestContext ctx)
     {
-        return new TDriver();
+        var driver = new TDriver();
+        driver.Init(ctx);
+        return driver;
     }
 
     protected virtual TVerifier CreateVerifier(TestContext ctx)
     {
-        return new TVerifier();
+        var verifier = new TVerifier();
+        verifier.Init(ctx);
+        return verifier;
     }
 }
