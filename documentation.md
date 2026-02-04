@@ -37,6 +37,7 @@ UserLogin_Succeeds_WithValidCredentials
 
 To Make Integration Test methods abstract from specific service implementation we aim to hide all detail of implementation behind some class. In the example below we have only DSL explanation what is happening and what is expected.
 Example:
+
 ```csharp
 [test]
 UserLogin_Succeeds_WithValidCredentials
@@ -88,10 +89,12 @@ To eliminate the need for the programmer to write every time this repeated code:
 
 ```csharp
 var driver = new UserServiceDriver(context);
+...
 var verifier = new UserServiceVerifier(context);
 ```
 
-We do this in the basic test class:
+We do this in the basic test class. **Please note that TestContext for each test case is
+created fresh and disposed after test case execution.**
 
 ```csharp
 public abstract class TestsBase<TDriver, TVerifier>
@@ -114,6 +117,8 @@ public abstract class TestsBase<TDriver, TVerifier>
     public void BaseTearDown()
     {
         Context?.Dispose();
+        Driver?.Dispose();
+        Verifier?.Dispose();
     }
     
     protected virtual TestContext BuildContext()
@@ -146,13 +151,44 @@ public class UserServiceTests
     [Test]
     public void UserLogin_Succeeds_WithValidCredentials()
     {
+        // Act
         Driver.LoginUser();
+
+        // Assert
         Verifier.AssertLoginSuccess();
     }
 }
 ```
+## Results property
+Very often in integration tests there is a need to check that some method execution returnet correct result, sometimes even sequence of executios should return particular results 
 
-## Lifecycle Diagram
+Example: 
+```csharp
+[test]
+ConsumeMessage_Succeeds_WithInboxMessagePresent
+{
+    var messages = InboxService.GetInboxMessages()
+    var result = InboxService.ConsumeMessage(message.First().id)
+
+    Assert.AreEqual(messages.Count == 2);
+    Assert.True(result.IsOk);
+}
+```
+
+For such cases TestContext has Results Property
+
+Inside driver we can wright to that property, and inside verifier we can read it
+
+  [[add here full pseudo code driver with these calls  ]]
+Context.Results.Set("messages", _inboxService.GetInboxMessages());
+Context.Results.Set<IResult>("consumeResult", InboxService.ConsumeMessage(message.First().id));
+
+
+  [[add here full pseudo code varifier with these calls  ]]
+Context.Results.Get("messages");
+
+
+## Lifecycle Diagram of Integration Test case execution 
 
 ```mermaid
 sequenceDiagram
@@ -200,3 +236,4 @@ sequenceDiagram
     deactivate Context
     deactivate Base
 ```
+
