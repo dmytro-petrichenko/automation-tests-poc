@@ -75,11 +75,11 @@ All assertions logic now in Verifier:
 ```csharp
 public class UserServiceVerifier 
 {
-    private UserService _userService = null!;
+    private UserService _service = null!;
 
     public void AssertLoginSuccess()
     {
-        _userService.Login("name", "pass");
+        _service.Login("name", "pass");
     }
 }
 ```
