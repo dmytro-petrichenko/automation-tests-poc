@@ -1,17 +1,17 @@
 ## Vocabulary
 - Domain - A descriptive model of actions used to express what is being tested. Captures what should happen when given inputs, state, or scenarios are applied, using business-meaningful concepts rather than technical checks.
-- Domain-Specific Language (DSL) - highlevel language abstracted from technical implementation
-- TestContext - Test environment setup. is context in which service will be tested, eg dependencies, configuration, backed responses . Created once per test. In the end of test its destroyed, to give a fresh clean start for next test.
+- Domain-Specific Language (DSL) - high-level language abstracted from technical implementation
+- TestContext - Test environment setup. It is a context in which the service will be tested, e.g., dependencies, configuration, mocked responses. Created once per test. At the end of the test, it is destroyed to give a fresh clean start for the next test.
 
 
 ## Main goal
-Make Integrations Test methods abstract from specific service implementation. 
-On the hight level of integration test to use only Domain-Specific Language (DSL)
-Same with assertion and arrangments.
+Make Integration Test methods abstract from specific service implementation. 
+On the high level of integration test to use only Domain-Specific Language (DSL).
+Same with assertion and arrangements.
 
-Despite unit tests , the integrations tests are more complex, and their setup, usually more complex, as well as assertions. Assertion that one domain behaviour is correct could include multiple checks of different layers. 
+Unlike unit tests, integration tests are more complex, and their setup is usually more complex, as well as assertions. An assertion that one domain behaviour is correct could include multiple checks of different layers. 
 
-example of complex arrange and asserts test method:
+Example of complex arrange and assertions test method:
 ```csharp
 [test]
 UserLogin_Succeeds_WithValidCredentials
@@ -24,7 +24,7 @@ UserLogin_Succeeds_WithValidCredentials
         configServiceMock.GetUserCredentials().Returns("login", "pass");
 
         var logger = new Logger();
-        var userService = new UserService(onfigServiceMock, httpClientMock, logger);
+        var userService = new UserService(configServiceMock, httpClientMock, logger);
 
         // Act
         userService.Login("name", "pass");
@@ -35,8 +35,8 @@ UserLogin_Succeeds_WithValidCredentials
 }
 ```
 
-To Make Integrations Test methods abstract from specific service implementation we aim to hide all detail of implementation behind some class. In example below we have only DSL explanation what is happening and what is expected 
-example:
+To Make Integration Test methods abstract from specific service implementation we aim to hide all detail of implementation behind some class. In the example below we have only DSL explanation what is happening and what is expected.
+Example:
 ```csharp
 [test]
 UserLogin_Succeeds_WithValidCredentials
@@ -58,40 +58,40 @@ UserLogin_Succeeds_WithValidCredentials
 }
 ```
 
-all action and arrangment logic now in Driver
+All action and arrangement logic now in Driver:
 ```csharp
 public class UserServiceDriver 
 {
-    private UserService _service = null!;
+    private UserService _userService = null!;
 
     public void LoginUser()
     {
-        _service.Login("name", "pass");
+        _userService.Login("name", "pass");
     }
 }
 ```
 
-all assertions logic now in Verifier
+All assertions logic now in Verifier:
 ```csharp
 public class UserServiceVerifier 
 {
-    private UserService _service = null!;
+    private UserService _userService = null!;
 
     public void AssertLoginSuccess()
     {
-        _service.Login("name", "pass");
+        _userService.Login("name", "pass");
     }
 }
 ```
 
-To eliminate need of prorgammer to write every time this repeated code:
+To eliminate the need for the programmer to write every time this repeated code:
 
 ```csharp
 var driver = new UserServiceDriver(context);
 var verifier = new UserServiceVerifier(context);
 ```
 
-we do this in basic test class:
+We do this in the basic test class:
 
 ```csharp
 public abstract class TestsBase<TDriver, TVerifier>
@@ -121,23 +121,23 @@ public abstract class TestsBase<TDriver, TVerifier>
         return new TestContextBuilder().Build();
     }
 
-    protected virtual TDriver CreateDriver(TestContext ctx)
+    protected virtual TDriver CreateDriver(TestContext context)
     {
         var driver = new TDriver();
-        driver.Init(ctx); //<-- initialize with context
+        driver.Init(context); //<-- initialize with context
         return driver;
     }
 
-    protected virtual TVerifier CreateVerifier(TestContext ctx)
+    protected virtual TVerifier CreateVerifier(TestContext context)
     {
         var verifier = new TVerifier();
-        verifier.Init(ctx);  //<-- initialize with context
+        verifier.Init(context);  //<-- initialize with context
         return verifier;
     }
 }
 ```
 
-so our test inherited from TestsBase with our particular driver and verifier looks like this now
+So our test inherited from TestsBase with our particular driver and verifier looks like this now:
 
 ```csharp
 public class UserServiceTests 
