@@ -11,34 +11,25 @@ public class GreetingServiceTests
     }
 }
 
-public class GreetingServiceDriver : IContextAware
+public class GreetingServiceDriver : TestContextAware
 {
-    private TestContext _context = null!;
     private GreetingService _service = null!;
 
     public void MakeGreet(string name)
     {
-        _context.Results.Set("greeting", _service.Greet(name));
+        Context.Results.Set("greeting", _service.Greet(name));
     }
 
-    public void Init(TestContext ctx)
+    protected override void OnInit(TestContext ctx)
     {
-        _context = ctx ?? throw new ArgumentNullException(nameof(ctx));
         _service = new GreetingService(ctx.LogService);
     }
 }
 
-public class GreetingServiceVerifier : IContextAware
+public class GreetingServiceVerifier : TestContextAware
 {
-    private TestContext _context = null!;
-
     public void AssertSuccessGreetResult()
     {
-        Assert.That("Hello, Alice!", Is.EqualTo(_context.Results.Get<string>("greeting")));
-    }
-
-    public void Init(TestContext ctx)
-    {
-        _context = ctx ?? throw new ArgumentNullException(nameof(ctx));
+        Assert.That("Hello, Alice!", Is.EqualTo(Context.Results.Get<string>("greeting")));
     }
 }
