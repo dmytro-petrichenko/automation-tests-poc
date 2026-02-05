@@ -24,9 +24,9 @@ public class UserServiceDriver : TestContextAware
         Context.Results.Set("loginResult", result);
     }
 
-    protected override void OnInit(TestContext ctx)
+    protected override void OnInit()
     {
-        _service = new UserService(ctx.LogService);
+        _service = new UserService(Context.LogService);
     }
 }
 
