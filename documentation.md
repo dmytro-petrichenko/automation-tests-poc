@@ -262,12 +262,18 @@ sequenceDiagram
 As a developer you will need mostly to create
 TestedServiceDriver and TestedServiceVerifier
 
-In some cases you might need to override  BuildContext method to ajust your test case context    
+In some cases you might need to override  `BuildContext()` method to ajust your test case context.
+For each test context we create sedparate test class with buch of tests related to that context.
 
+```csharp
 protected virtual TestContext BuildContext()
 {
-    return new TestContextBuilder().Build();
+    return new TestContextBuilder().SetUpDefaultContext()
+        .WithRealHttpClient()
+        .WithIdentityService(new MyTestIdentityService())
+        .Build();
 }
+```
 
 Real life implementation examples are in this repo
 https://github.com/ProductMadness/apptech-phoenix-automation-unity
