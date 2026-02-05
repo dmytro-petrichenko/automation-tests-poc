@@ -2,7 +2,7 @@ namespace SimpleServiceLib.Tests;
 
 public interface IContextAware
 {
-    void InitializeContext(TestContext ctx);
+    void InitializeContext(TestContext context);
 }
 
 public abstract class TestsBase<TDriver, TVerifier>

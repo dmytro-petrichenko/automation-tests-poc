@@ -4,9 +4,9 @@ public abstract class TestContextAware : IContextAware
 {
     protected TestContext Context { get; private set; } = null!;
 
-    public void InitializeContext(TestContext ctx)
+    public void InitializeContext(TestContext context)
     {
-        Context = ctx ?? throw new ArgumentNullException(nameof(ctx));
+        Context = context ?? throw new ArgumentNullException(nameof(context));
         OnInit();
     }
 

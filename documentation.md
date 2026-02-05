@@ -59,11 +59,18 @@ UserLogin_Succeeds_WithValidCredentials
 }
 ```
 
-All action and arrangement logic now in Driver:
+All action and arrangement logic now in Driver which inherits from `TestContextAware` to access shared `Context`:
 ```csharp
-public class UserServiceDriver 
+public class UserServiceDriver : TestContextAware
 {
     private UserService _userService = null!;
+
+    // Init() method from base class calls OnInit()
+    protected override void OnInit()
+    {
+        // Resolve dependencies using the context
+        _userService = new UserService(Context.LogService);
+    }
 
     public void LoginUser()
     {
@@ -74,13 +81,36 @@ public class UserServiceDriver
 
 All assertions logic now in Verifier:
 ```csharp
-public class UserServiceVerifier 
+public class UserServiceVerifier : TestContextAware
 {
-    private UserService _service = null!;
-
     public void AssertLoginSuccess()
     {
-        _service.Login("name", "pass");
+        // Test results stored in Context 
+        var result = Context.Results.Get<string>("loginResult");
+        Assert.That(result, Is.EqualTo("ok"));
+    }
+}
+```
+
+## The TestContextAware Base Class
+To strictly decouple the test logic from implementation details while ensuring all components share the same state, we use the `TestContextAware` base class.
+
+This class implements the `IContextAware` interface required by `TestsBase` and provides a standard way to inject the `TestContext`.
+
+```csharp
+public abstract class TestContextAware : IContextAware
+{
+    protected TestContext Context { get; private set; } = null!;
+
+    public void InitializeContext(TestContext context)
+    {
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        OnInit();
+    }
+
+    // Override this method to initialize your driver/verifier with context dependencies
+    protected virtual void OnInit()
+    {
     }
 }
 ```
@@ -129,14 +159,14 @@ public abstract class TestsBase<TDriver, TVerifier>
     protected virtual TDriver CreateDriver(TestContext context)
     {
         var driver = new TDriver();
-        driver.Init(context); //<-- initialize with context
+        driver.InitializeContext(context); //<-- calls TestContextAware.InitializeContext()
         return driver;
     }
 
     protected virtual TVerifier CreateVerifier(TestContext context)
     {
         var verifier = new TVerifier();
-        verifier.Init(context);  //<-- initialize with context
+        verifier.InitializeContext(context);  //<-- calls TestContextAware.InitializeContext()
         return verifier;
     }
 }
@@ -216,24 +246,26 @@ sequenceDiagram
     participant Runner as User/Runner
     participant Base as TestsBase
     participant Context as TestContext
-    participant Driver as Driver
-    participant Verifier as Verifier
+    participant Driver as Driver (TestContextAware)
+    participant Verifier as Verifier (TestContextAware)
     participant Service as Service
 
     Runner->>Base: BaseSetUp()
     activate Base
     Base->>Context: new TestContextBuilder().Build()
     activate Context
-
+    
     Base->>Driver: new Driver()
     activate Driver
-    Base->>Driver: Init(context)
-    Driver->>Service: new Service(context dependencies)
+    Base->>Driver: InitializeContext(context)
+    Note over Driver: Sets Context property<br/>Calls OnInit()
+    Driver->>Service: new Service(context.LogService, etc)
     activate Service
 
     Base->>Verifier: new Verifier()
     activate Verifier
-    Base->>Verifier: Init(context)
+    Base->>Verifier: InitializeContext(context)
+    Note over Verifier: Sets Context property<br/>Calls OnInit()
     deactivate Base
 
     Runner->>Base: [Test] Execution
@@ -242,7 +274,7 @@ sequenceDiagram
     Driver->>Service: Action()
     Service->>Context: Change State / Data
     Base->>Verifier: Assert()
-    Verifier->>Context: Check State
+    Verifier->>Context: Check State / Results
     deactivate Base
 
     Runner->>Base: BaseTearDown()
